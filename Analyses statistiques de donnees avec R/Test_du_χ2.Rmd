@@ -1,0 +1,109 @@
+---
+title: "Test du χ 2 d’indépendance"
+author: "Serigne Fallou Mbacke NGOM"
+date: "2023-09-14"
+output: html_document
+---
+
+Nous allons tester l’indépendance, avec une erreur de première espèce choisie égale à 5 %, entre les variables:
+- TOUX et GRIPPE;
+- DIARRHEES et VOMISSEMENTS;
+- FVR et PALUDISME.
+
+### IMPORTER ET NETTOYAE DES DONNEES:
+```{r, echo=FALSE}
+library(readxl)
+Clinic_Data = (read_xlsx("C:/STAGE IPD EPIDEMIOLOGIE/Cliniques Arbo.xlsx"))
+Clinic_Data = data.frame(Clinic_Data)
+
+```
+```{r}
+for (i in c("FVR","TOUX", "GRIPPE", "PALUDISME", "DIARRHEES" , "VOMISSEMENTS" ))
+  {Clinic_Data[, i]= factor(Clinic_Data[, i])}
+for (i in c('FVR', 'TOUX',  'GRIPPE', 'PALUDISME', 'DIARRHEES', 'VOMISSEMENTS'))
+{levels(Clinic_Data[,i]) = c(paste(i, "Oui", sep = "_"), paste(i, "Non", sep = "_"))}
+
+data = Clinic_Data[c("FVR","TOUX", "GRIPPE", "PALUDISME", "DIARRHEES" , "VOMISSEMENTS")]
+summary(data)
+```
+
+### VISUALISATION DES DONNEES:
+```{r}
+tab_Toux_Grippe <- xtabs(~TOUX+GRIPPE, data=data)
+tab_FVR_PALUDISME <- xtabs(~FVR+PALUDISME, data=data)
+tab_DIARRHEES_VOMISSEMENTS <- xtabs(~DIARRHEES+VOMISSEMENTS, data=data)
+
+par(mfrow=c(1,3))
+plot(tab_Toux_Grippe)
+plot(tab_FVR_PALUDISME)
+plot(tab_DIARRHEES_VOMISSEMENTS)
+
+```
+
+### Calculer les profils lignes et les profils colonnes (Facultatif):
+```{r}
+round(100*prop.table(tab_DIARRHEES_VOMISSEMENTS, margin = 1), 1)
+```
+```{r}
+round(100*prop.table(tab_FVR_PALUDISME, margin = 1), 1)
+```
+```{r}
+round(100*prop.table(tab_Toux_Grippe, margin = 1), 1)
+```
+
+
+### Construire le test du χ2:
+- TOUX et GRIPPE;
+```{r}
+resultat_Toux_Grippe <- chisq.test(tab_Toux_Grippe)
+resultat_Toux_Grippe
+```
+Pour nos données, χ2 obs ≈ 2522.9. 
+La probabilité critique p-value < 2.2e-16. Cette probabilité critique étant inférieure au seuil fixé à 5 %, nous considérons de telles données comme peu probables sous H0 et rejetons cette hypothèse. On considère donc que la GRIPPE dépend de la TOUX.
+
+- DIARRHEES et VOMISSEMENTS;
+```{r}
+resultat_DIARRHEES_VOMISSEMENTS <- chisq.test(tab_DIARRHEES_VOMISSEMENTS)
+resultat_DIARRHEES_VOMISSEMENTS
+```
+La probabilité critique p-value < 0.05. Nous rejetons l'hypothèse H0. On considère donc que les VOMISSEMENTS dépendent des DIARRHEES.
+
+- FVR et PALUDISME.
+```{r}
+resultat_FVR_PALUDISME <- chisq.test(tab_FVR_PALUDISME)
+resultat_FVR_PALUDISME
+```
+Pour nos données, χ2obs ≈ 1.67 ; La probabilité critique, p-value, indique que, sous H0, et pour un échantillon de même taille, la probabilité d’obtenir une valeur de χ2obs au moins aussi grande que celle-ci est d’environ 19.7%. Cette probabilité critique
+étant superieure au seuil fixé à 5%, nous considérons de telles données comme fort probables sous H0 et retenons cette hypothèse. On considère donc que le paludisme ne dépend pas de la fievre.
+
+
+### Calculer les contributions au χ2:
+Quand on rejette l’hypothèse d’indépendance, il est intéressant de calculer la contribution des couples de modalités à la statistique du χ2 pour voir les associations entre modalités qui contribuent aux écarts à l’indépendance.
+
+- TOUX et GRIPPE;
+```{r}
+round(resultat_Toux_Grippe$expected,1)
+```
+
+```{r}
+round(100 * resultat_Toux_Grippe$residuals^2 / resultat_Toux_Grippe$statistic, 1)
+```
+
+```{r}
+round(resultat_Toux_Grippe$residuals, 3)
+```
+Le nombre de patient grippés et presentant des toux est plus important qu’attendu sous H0. De meme que le nombre de patients non grippés et ne presentant pas de toux est beaucoup plus important qu'attebdu sous H0.
+
+- DIARRHEES et VOMISSEMENTS;
+```{r}
+round(resultat_DIARRHEES_VOMISSEMENTS$expected,1)
+```
+```{r}
+round(100 * resultat_DIARRHEES_VOMISSEMENTS$residuals^2 / resultat_DIARRHEES_VOMISSEMENTS$statistic, 1)
+```
+```{r}
+round(resultat_DIARRHEES_VOMISSEMENTS$residuals, 3)
+```
+Le nombre de patient ayant des vomissements et sans diarrhee est plus faible qu’attendu sous H0. De meme que le nombre de patients sans vomissements et ne presentant pas de diarrees est beaucoup plus important qu'attebdu sous H0.
+
+

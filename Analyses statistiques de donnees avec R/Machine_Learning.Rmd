@@ -1,0 +1,47 @@
+---
+title: "Machine Learning"
+author: "Serigne Fallou MBacke NGOM"
+date: "2023-09-29"
+output: html_document
+---
+
+## Arbre de classification:
+###Arbre de décision
+Un arbre de décision est un outil d’aide à la décision représentant un ensemble de choix sous la forme graphique d’un arbre. Les différentes décisions possibles sont situées aux extrémités des branches (les « feuilles » de l’arbre), et sont atteintes en fonction de décisions prises à chaque étape
+```{r}
+library("rpart")
+library("rpart.plot")
+library(tree)
+Microbes_des = read.csv2('C:/Jeux de donnees/microbes.csv', dec = ".")
+head(Microbes_des)
+Microbes_des$microorganisms = factor(Microbes_des$microorganisms)
+summary(Microbes_des)
+
+```
+
+```{r}
+alpha     <- 0.8 
+inTrain   <- sample(1:nrow(Microbes_des), alpha * nrow(Microbes_des))
+train.set <- Microbes_des[inTrain,]
+test.set  <- Microbes_des[-inTrain,]
+
+tree.model <- rpart(microorganisms~., method="class", data=train.set)
+```
+
+```{r}
+library(party)
+
+summary(tree.model)
+plot(tree.model, ylim=c(0,1.2))
+text(tree.model, cex=0.6)
+fit <- ctree(Species ~ Sepal.Width + Petal.Width,  data=train.set)
+plot(fit, main="Conditional Inference Tree for Microbes_Descriptions")
+```
+
+```{r}
+tree <- tree(micro ~.,  data=Mi)
+plot(Micr,pch=19,col=as.numeric(Mi$micr))
+partition.tree(tree,label="Microorganismes",add=TRUE)
+legend(1.75,4.5,legend=unique(MI$micro),col=unique(as.numeric(MIcro$micro)),pch=19)
+```
+

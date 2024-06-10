@@ -1,0 +1,63 @@
+---
+title: "Comparaison de deux moyennes"
+author: "Serigne Fallou Mbacke NGOM"
+date: "2023-09-16"
+output: html_document
+---
+
+Nous présentons ici le test classique de comparaison de deux moyennes. Pour cela nous disposons d’observations d’une variable quantitative qui sont supposées avoirété tirées aléatoirement dans deux populations (notées 1 et 2) et ce de manière indépendante. Les moyennes de la variable dans chaque population, notées µ1 et µ2, sont inconnues et nous allons tester l’égalité de ces deux moyennes au regard des données collectées.
+
+
+### IMPORTER ET NETTOYAE DES DONNEES:
+```{r, echo=FALSE}
+library(readxl)
+Clinic_Data = (read_xlsx("C:/STAGE IPD EPIDEMIOLOGIE/Cliniques Arbo.xlsx"))
+Clinic_Data = data.frame(Clinic_Data)
+Clinic_Data <- subset(Clinic_Data, TEMP >= 37 & TEMP <= 40)
+Clinic_Data <- subset(Clinic_Data, SEXE != 9)
+
+```
+```{r}
+Clinic_Data[,"SEXE" ]= factor(Clinic_Data[, "SEXE"])
+levels(Clinic_Data[,'SEXE']) = c( "Femme","Homme")
+
+data_temp_Sexe = Clinic_Data[c("TEMP","SEXE")]
+summary(data_temp_Sexe)
+```
+
+n1 > 30 et n2 > 30, vérifier les hypothèses de normalité n’est pas nécessaire, la loi de la statistique de test étant approchée par une loi de Student comme dans le cas gaussien.
+
+### Comparer graphiquement les deux sous-populations:
+```{r}
+boxplot(TEMP ~ SEXE, ylab="Temperature", xlab="Sexe", data=data_temp_Sexe)
+```
+
+### Estimer les statistiques de base dans chaque groupe:
+```{r}
+aggregate(data_temp_Sexe$TEMP,by=list(data_temp_Sexe$SEXE),FUN=summary)
+```
+### Tester l’égalité des variances:
+La statistique de test sur laquelle s’appuie le test de comparaison de moyennes
+diffère selon que les variances σ2 1 et σ2 2 peuvent être considérées comme égales ou non. Le test de l’hypothèse H0 : σ2 1 = σ2 2
+contre l’hypothèse alternative H1 : σ2 1 != σ2 2 s’écrit comme suit :
+```{r}
+var.test(TEMP ~ SEXE,conf.level=.95,data=data_temp_Sexe)
+```
+La probabilité critique associée à ce test est 0.58 : au seuil 5 %, nous retenons H0 et considérons que les variances ne sont pas significativement différentes. Notons que le listing fournit une estimation du rapport σ2 1/σ2 2 (ratio of variances=1.027454), le numérateur correspondant par défaut à la variance empirique associée au premier niveau du facteur (ici Femme). 
+ On dispose aussi d’un intervalle de confiance pour ce rapport (95 percent confidence interval: 0.9334075  1.1312627)
+
+### Tester l’égalité des moyennes:
+```{r}
+t.test(TEMP~SEXE, alternative="two.sided", conf.level=.95,var.equal=TRUE, data=data_temp_Sexe)
+
+```
+
+La probabilité critique associée au test (p-value = 0.001209) nous conduit à rejeter, au seuil 5 %, H0 : µ1 = µ2 au profit de H1 : µ1 != µ2. Ainsi, compte tenu des écarts-types, les moyennes observées dans l’échantillon (38.76 pour les hommes, 38.83 pour les femmes) sont suffisamment différentes pour que nous puissions considérer que les « vraies » moyennes µ1 et µ2 sont significativement différentes. 
+
+ On peut aussi tester si les femmes ont des temperatures plus faibles que les hommes contre l’alternative opposée, c’est-à-dire H0 : µ1 ≤ µ2 contre H1 : µ1 > µ2. 
+ 
+```{r}
+t.test(TEMP~SEXE, alternative="greater", conf.level=.95,var.equal=TRUE, data=data_temp_Sexe)
+```
+**Sans surprise, on accepte l’hypothèse H1 selon laquelle les femmes ont des temperatures plus elevees.**
+

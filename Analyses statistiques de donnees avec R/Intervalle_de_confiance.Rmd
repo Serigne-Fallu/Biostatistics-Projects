@@ -1,0 +1,62 @@
+---
+title: "Intervalle de confiance d’une moyenne"
+author: "Serigne Fallou Mbacke NGOM"
+date: "2023-09-07"
+output: html_document
+---
+
+Nous nous intéressons aux temperatures corporelles des individues dans une etude.
+Nous souhaitons connaître, pour la population mère, une estimation de la temperature moyenne et un intervalle de confiance pour cette moyenne de niveau 95 %.
+
+Étapes Analyse statistique:
+1. Importer les données
+2. Estimation des paramètres (moyenne, écart-type)
+3. Distribution des données
+4. Construire l’intervalle de confiance
+
+### 1. Importer et nettoyager des donnees:
+```{r, echo=FALSE}
+library(readxl)
+Clinic_Data = (read_xlsx("C:/STAGE IPD EPIDEMIOLOGIE/Cliniques Arbo.xlsx"))
+Clinic_Data = data.frame(Clinic_Data)
+Clinic_Data <- subset(Clinic_Data, TEMP >= 37 & TEMP <= 40)
+
+```
+```{r}
+temp_data = Clinic_Data["TEMP"]
+head(temp_data)
+summary(temp_data)
+```
+
+
+### 2. Estimation des paramètres (moyenne, écart-type)
+- Temperature moyenne:
+```{r}
+round(mean(temp_data$TEMP), 3)
+```
+- Ecart-type de temperature:
+```{r}
+round(sd(temp_data$TEMP), 3)
+```
+
+### 3. Distribution des données
+```{r, warning=FALSE}
+hist(temp_data$TEMP,main="Distribution des temperature",freq=FALSE,xlab="Temperature",ylab="")
+lines(density(temp_data$TEMP),col="red")
+
+require(ggplot2)
+ggplot(temp_data)+aes(x=TEMP,y=..density..)+geom_histogram(bins=12)+ylab("")+ geom_line(stat="density",col="red")+ggtitle("Distribution des temperatures")
+
+```
+```{r}
+length(temp_data$TEMP)
+```
+cette distribution asymétrique ne ressemble pas à celle d’une loi normale. Ceci ne pose cependant pas de problème pour estimer µ vu la taille importante de la population étudiée (n = 3596).
+
+### 4. Construire l’intervalle de confiance
+```{r}
+t.test(temp_data$TEMP,conf.level=0.95)$conf.int
+```
+**TEMPERATURE MOYENNE: 38.78  ;  INTERVALLE DE CONFIANCE (95%): [38.77 - 38.81]**
+
+

@@ -1,0 +1,83 @@
+---
+title: "Classification Ascendante Hierarchique"
+author: "Serigne Fallou Mbacke NGOM"
+output: html_document
+date: "2023-09-23"
+---
+
+La Classification Ascendante Hiérarchique (CAH) a pour objectif de construire une hiérarchie sur les individus et se présente sous la forme d’un dendrogramme. Cette classification permet de regrouper des individus dans des classes les plus homogènes possibles à partir d’un jeu de données individus × variables. Cette méthode nécessite de choisir : une distance entre individus, ou plus généralement une dissimilarité et un indice d’agrégation entre les classes.
+
+### Importer les donnees:
+- Series_title	"Malaria-specific Type 1 Regulatory T cells are more abundant in first pregnancies and associated with placental malaria [Whole Blood RNA-seq]"
+
+- !Series_geo_accession	"GSE234585"
+!Series_status	"Public on Jun 18 2023"
+!Series_submission_date	"Jun 09 2023"
+!Series_last_update_date	"Jun 18 2023"
+
+- Sample_type	"SRA"	
+
+- Sample_source_name_ch1	"whole blood"  "Homo sapiens"
+
+- Sample_molecule_ch1	"total RNA"
+
+- Sample_instrument_model	"Illumina NovaSeq 6000" "RNA-Seq"
+
+- !Series_summary	"To investigate gravidity dependent immunity to malaria we sequenced whole blood RNA from women with and without parasitemia and both pregnant and non-pregnant controls."
+!Series_overall_design	"Whole blood RNAsequencing data among pregnant and non-pregnant women in Eastern Uganda."
+!Series_type	"Expression profiling by high throughput sequencing"
+
+- !Series_contributor	"Adam,,Kirosingh"
+!Series_contributor	"Prasanna,,Jagannathan"
+!Series_contributor	"Sanchita,,Bhattacharya"
+!Series_contributor	"Alea,,Delmastro"
+
+- !Series_contact_name	"Adam,,Kirosingh"
+!Series_contact_email	"kirosingh@gmail.com"
+!Series_contact_laboratory	"Jagannathan"
+!Series_contact_department	"Microbiology & Immunology"
+!Series_contact_institute	"Stanford University"
+!Series_contact_address	"1265 Welch Rd"
+!Series_contact_city	"Stanford"
+!Series_contact_state	"CA"
+!Series_contact_zip/postal_code	"94305"
+!Series_contact_country	"USA"
+
+- !Series_supplementary_file	"ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE234nnn/GSE234585/suppl/GSE234585_counts_combined.csv.gz"
+
+!Series_relation	"SubSeries of: GSE234587"
+!Series_relation	"BioProject: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA982094"
+
+- !Sample_title	"1_Positive_pregnant"	"2_Positive_nonpregnant"	"3_Positive_nonpregnant"	"4_Positive_nonpregnant"	"5_Negative_pregnant"	"6_Positive_pregnant"	"7_Positive_nonpregnant"	"8_Positive_pregnant"	"9_Negative_pregnant"	"10_Negative_pregnant"	"11_Positive_pregnant"	"12_Negative_nonpregnant"	"13_Positive_pregnant"	"14_Positive_nonpregnant"	"15_Negative_pregnant"	"16_Positive_pregnant"	"17_Positive_pregnant"	"18_Positive_pregnant"	"19_Negative_pregnant"	"20_Positive_pregnant"	"21_Positive_pregnant"	"22_Negative_pregnant"	"23_Positive_pregnant"	"24_Negative_pregnant"	"25_Negative_nonpregnant"	"26_Positive_pregnant"	"27_Positive_pregnant"	"28_Negative_nonpregnant"	"29_Negative_nonpregnant"	"30_Negative_nonpregnant"	"31_Negative_pregnant"	"32_Negative_pregnant"	"33_Negative_pregnant"
+
+- !Sample_geo_accession	"GSM7471411"	"GSM7471412"	"GSM7471413"	"GSM7471414"	"GSM7471415"	"GSM7471416"	"GSM7471417"	"GSM7471418"	"GSM7471419"	"GSM7471420"	"GSM7471421"	"GSM7471422"	"GSM7471423"	"GSM7471424"	"GSM7471425"	"GSM7471426"	"GSM7471427"	"GSM7471428"	"GSM7471429"	"GSM7471430"	"GSM7471431"	"GSM7471432"	"GSM7471433"	"GSM7471434"	"GSM7471435"	"GSM7471436"	"GSM7471437"	"GSM7471438"	"GSM7471439"	"GSM7471440"	"GSM7471441"	"GSM7471442"	"GSM7471443"
+```{r}
+Data_Transc <- read.csv2("C:/Jeux de donnees/Transciptomic_Data.csv",header=TRUE,row.names=1,check.names=FALSE)
+head(Data_Transc[4:10])
+
+```
+
+### Classification Ascendante Hiérarchique
+```{r, include=FALSE}
+library(FactoMineR)
+library(factoextra)
+```
+
+```{r}
+acp = PCA(Data_Transc[3:16383], graph = FALSE)
+res.hcpc = HCPC(acp, nb.clust = 0, graph = FALSE)
+plot(res.hcpc, choice = "tree")
+
+```
+
+```{r}
+plot(res.hcpc, choice = "3D.map")
+```
+```{r}
+fviz_cluster(res.hcpc, show.clust.cent = TRUE, palette = "jco", ggtheme = theme_minimal(), main="Factor map")
+
+```
+
+### Description des clusters:
+
+

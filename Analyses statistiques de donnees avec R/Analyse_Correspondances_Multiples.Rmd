@@ -1,0 +1,73 @@
+---
+title: "Analyse des Correspondances Multiples"
+author: "Serigne Fallou Mbacke NGOM"
+date: "2023-09-22"
+output: html_document
+---
+
+L’objectif de l’Analyse des Correspondances Multiples (ACM) est de résumer un tableau de données où les individus sont décrits par des variables qualitatives. L’ACM permet d’étudier les ressemblances entre individus du point de vue de l’ensemble des variables et de dégager des profils d’individus. Elle permet également de faire un bilan des liaisons entre variables et d’étudier les associations de modalités.
+
+### Importer les donnees:
+
+```{r, echo=FALSE}
+library(readxl)
+Arbo_clinic = (read_xlsx("C:/STAGE IPD EPIDEMIOLOGIE/Cliniques Arbo.xlsx"))
+Arbo_clinic = data.frame(Arbo_clinic)
+Data_Cl = Arbo_clinic[,c( "SEXE","TOUX", "DOUL_THOR", "TACHYPNEE", "GRIPPE")]
+```
+
+```{r}
+for (i in c("SEXE","TOUX", "DOUL_THOR", "TACHYPNEE", "GRIPPE")){
+  Data_Cl[, i] = factor(Data_Cl[, i])
+  }
+
+
+for (i in c("TOUX", "DOUL_THOR", "TACHYPNEE", "GRIPPE")){
+  levels(Data_Cl[,i]) = c(paste(i, "Oui", sep = "_"), paste(i, "Non", sep = "_"))
+  }
+
+levels(Data_Cl[,'SEXE']) = c( "Homme","Femme", "Nsp")
+head(Data_Cl)
+summary(Data_Cl)
+```
+### Analyse des Correspondances Multiples (ACM2):
+```{r}
+library(FactoMineR)
+library(factoextra)
+mca <- MCA(Data_Cl, graph = FALSE)
+fviz_screeplot(mca, addlabels = TRUE, ylim = c (0, 45))
+
+```
+
+
+```{r}
+fviz_mca_biplot(mca,axes = c(1, 2), col.var='cos2', gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),repel = TRUE, invisible="ind", ggtheme=theme_minimal())
+
+fviz_mca_biplot(mca,axes = c(1, 3), col.var='cos2', gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),repel = TRUE, invisible="ind", ggtheme=theme_minimal())
+
+fviz_mca_biplot(mca,axes = c(2, 4), col.var='cos2', gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),repel = TRUE, invisible="ind", ggtheme=theme_minimal())
+
+```
+
+Nous constatons que les quatres(4) premiers composantes expliques 97% de l’information. L’analyse des composantes nous permet de dèduire qu’en gènèral:
+
+- Les patients grippès (GRIPPE_Oui), prèsentent des toux (TOUX_Oui) et vice versa. Et aussi ceux non grippès(GRIPPE_Non), ne prèsentent pas de toux (TOUX_Non) et vice versa. Donc on pourra regrouper les deux variables en une seule : TOUX + GRIPPE = GRIP_T ou TOUX_G …
+
+- Les personnes qui prèsentent des douleurs thoraciques (DOUL_THOR_Oui), prèsentent egalement de la tachynèe (TACHYNEE_Oui).
+
+- Il existe un faible rapprochement entre les deux(2) groupes de patients [avec toux (TOUX_Oui), ceux grippès (GRIPPE_Oui)] et [ceux presentant des tachynees (TACHYNEE_Oui)et douleurs thoraciques (DOUL_THOR_Oui)].
+
+### Arbres:
+Les arbres sont des outils d’exploration des données et d’aide à la décision qui permettent d’expliquer et de prédire une variable quantitative (arbre de régression) ou qualitative (arbre de classification) à partir de variables explicatives quantitatives
+et/ou qualitatives
+
+```{r}
+library("rpart")
+library("rpart.plot")
+library(tree)
+
+tree.mode2 <- rpart(TOUX ~ GRIPPE + DOUL_THOR + TACHYPNEE, method="class", data=Data_Cl)
+rpart.plot(tree.mode2)
+```
+L'arbre de dècision rejoint notre hypothèse selon laquelle dès l'instant que le patient est grippè, donc il prèsente des toux. 
+

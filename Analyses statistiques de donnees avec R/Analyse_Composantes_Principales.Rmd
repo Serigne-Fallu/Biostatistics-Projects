@@ -1,0 +1,60 @@
+---
+title: "Analyse en Composantes Principales"
+author: "Serigne Fallou Mbacke NGOM"
+date: "2023-09-18"
+output: html_document
+---
+
+L’objectif d’une Analyse en Composantes Principales (ACP) est de résumer et visualiser un tableau de données individus × variables. L’ACP permet d’étudier les ressemblances entre individus du point de vue de l’ensemble des variables et dégage des profils d’individus. Elle permet également de réaliser un bilan des liaisons linéaires entre variables à partir des coefficients de corrélations.
+
+Nous avons utilisé des données fournies par notre professeur de technologie aquacole. Ces données sont issues d’une expérimentation menée dans des fermes aquacoles au Sénégal et sont reparties sur quarte fichiers Excel. Les données contiennent des information sur l’alimentation (Ratio alimentaire, Taux de conversion alimentaire, …) et la croissances des poissons (Biomasse, Taux de croissance, Taux de survie, …) pendant la période d’élevage.
+Nous voulons dresser un bilan des relations entre les parametres zootechniques et comparer les performences des trois aliments testes.
+
+### 1. Importer le jeu de données
+
+```{r, warning=FALSE}
+library(readxl)
+Aqua_data = read_xlsx("C:/@Bioiformatique mini-projets/ANALYSE AQUACULTURE/JEUX DE_DONNEES_AQUA_CORR.xlsx")
+head(Aqua_data)
+```
+```{r}
+Aqua_data$Aliment = factor(Aqua_data$Aliment)
+Aqua_data$Bacs = factor(Aqua_data$Bacs)
+summary(Aqua_data)
+```
+
+### Analyse en Composantes Principales (ACP):
+```{r, warning=FALSE}
+library(FactoMineR)
+res.pca <- PCA(Aqua_data[4:15], quali.sup=3, graph = FALSE)
+```
+
+- Variance expliquée:
+```{r, warning=FALSE}
+library("factoextra")
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 100))
+```
+
+- Cercle de corrélation:
+```{r}
+library("corrplot")
+var <- get_pca_var(res.pca)
+corrplot(var$cos2, is.corr=FALSE)
+```
+
+```{r}
+fviz_pca_var(res.pca, col.var = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE )
+fviz_pca_var(res.pca, col.var = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE , axes = 2:3)
+fviz_pca_var(res.pca, col.var = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE , axes = 3:4)
+```
+
+### Comparaison des performences des trois (3) aliments:
+```{r}
+library(ggplot2)
+ggplot(Aqua_data) + aes(x=Ration_g, y=TCA,color=Aliment) + geom_point()
+ggplot(Aqua_data) + aes(x=Taux_croissance_spécifique_en_j, y=TCA,color=Aliment) + geom_point()
+ggplot(Aqua_data) + aes(x=Taux_de_survie, y=TCA,color=Aliment) + geom_point()
+ggplot(Aqua_data) + aes(x=Aliment, y=TCA) + geom_point()
+
+```
+

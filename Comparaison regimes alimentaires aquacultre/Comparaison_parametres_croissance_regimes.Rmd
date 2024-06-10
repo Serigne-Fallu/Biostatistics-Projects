@@ -1,0 +1,161 @@
+---
+title: "Comparaison parametres pour differents regimes alimentaires"
+author: "Serigne Fallou MBacke NGOM"
+date: "2024-02-16"
+output: html_document
+---
+
+
+## Importation et reoganisation des data
+```{r}
+data = read.csv2("Données  NIANG fin Janvier 2024.csv", dec = ".", check.names = FALSE)
+data = data.frame(data, check.names=FALSE)
+print(data)
+```
+
+
+## Visualisation des donnees
+```{r}
+library(ggplot2)
+
+plots <- list()
+for (col in names(data)[-1]) {
+  # Créer le boxplot pour la variable actuelle
+  plot <- ggplot(data, aes_string(x = 'Regimes', y = col)) +
+    geom_boxplot(fill = "skyblue", color = "blue") +
+    labs(title = paste("Boxplot de", col, "par régime"), x = "Régime", y = col)
+  
+  plots[[col]] <- plot
+}
+
+plots
+```
+
+
+## Analyses statistiques:
+### Statistiques globales pour les parametres
+- **RESUME GLOBAL (moyenne, median, max, quartiles, ...) DES PARAMETRES**
+```{r}
+data$Regimes = factor(data$Regimes)
+summary(data)
+```
+
+- **CALCLCUL ECART-TYPES GLOBAUX DES PARAMETRES**
+```{r}
+apply(data[, -1], 2, sd)
+```
+
+### Statistiques parametres pour le REGIME 1:
+- **RESUME PARAMETRES (moyenne, median, max, quartiles, ...) POUR REGIME 1**
+```{r}
+summary(data[1:3,])
+```
+
+- **CALCLCUL ECART-TYPES DES PARAMETRES POUR REGIME 1**
+```{r}
+apply(data[1:3, -1], 2, sd)
+```
+
+
+### Statistiques parametres pour le REGIME 2:
+- **RESUME PARAMETRES (moyenne, median, max, quartiles, ...) POUR REGIME 2**
+```{r}
+summary(data[4:6,])
+```
+
+- **CALCLCUL ECART-TYPES DES PARAMETRES POUR REGIME 2**
+```{r}
+apply(data[4:6, -1], 2, sd)
+```
+
+
+### Statistiques parametres pour le REGIME 3:
+- **RESUME PARAMETRES (moyenne, median, max, quartiles, ...) POUR REGIME 3**
+```{r}
+summary(data[7:9,])
+```
+
+- **CALCLCUL ECART-TYPES DES PARAMETRES POUR REGIME 3**
+```{r}
+apply(data[7:9, -1], 2, sd)
+```
+
+
+### Statistiques parametres pour le REGIME 4:
+- **RESUME PARAMETRES (moyenne, median, max, quartiles, ...) POUR REGIME 4**
+```{r}
+summary(data[10:12,])
+```
+
+- **CALCLCUL ECART-TYPES DES PARAMETRES POUR REGIME 4**
+```{r}
+apply(data[10:12, -1], 2, sd)
+```
+
+
+## Tests statistiques: ANOVA
+### PMI
+```{r}
+anova_PMI <- aov(pmi ~ Regimes, data = data)
+summary(anova_PMI)
+```
+**il n'y a pas de différences significatives pour les valeurs de PMI entre les différents régimes.**
+
+### PMF        
+```{r}
+anova_PMF <- aov(PMF ~ Regimes, data = data)
+summary(anova_PMF)
+```
+**il n'y a pas de différences significatives pour les valeurs de PMF entre les différents régimes.**
+
+### GPMA
+```{r}
+anova_GPMA <- aov(GPMA ~ Regimes, data = data)
+summary(anova_GPMA)
+```
+**il n'y a pas de différences significatives pour les valeurs de GPMA entre les différents régimes.**
+
+
+### GPMR
+```{r}
+anova_GPMR <- aov(GPMR ~ Regimes, data = data)
+summary(anova_GPMR)
+```
+**il n'y a pas de différences significatives pour les valeurs de GPMR entre les différents régimes.**
+
+
+### TCS
+```{r}
+anova_TCS <- aov(TCS ~ Regimes, data = data)
+summary(anova_TCS)
+```
+**il n'y a pas de différences significatives pour les valeurs de TCS entre les différents régimes.**
+
+
+### TCA
+```{r}
+anova_TCA <- aov(TCA ~ Regimes, data = data)
+summary(anova_TCA)
+```
+**il n'y a pas de différences significatives pour les valeurs de TCA entre les différents régimes.**
+
+Tansformons les donnees pour voir:
+```{r}
+data$TCA.log10 = log10(data$TCA)
+
+anova_TCA.log10 <- aov(TCA.log10 ~ Regimes, data = data)
+summary(anova_TCA.log10)
+```
+**Toujours, il n'y a pas de différences significatives pour les valeurs de TCA entre les différents régimes.**
+
+
+
+### TS
+```{r}
+anova_TS <- aov(TS ~ Regimes, data = data)
+summary(anova_TS)
+```
+**il n'y a pas de différences significatives pour les valeurs de TS  entre les différents régimes.**
+
+
+

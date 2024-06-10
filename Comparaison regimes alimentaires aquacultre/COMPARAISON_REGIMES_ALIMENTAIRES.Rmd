@@ -1,0 +1,97 @@
+---
+title: "COMPARAISON DE REGIMES ALIMENTAIRES"
+author: "Serigne Fallou MBacke NGOM"
+date: "2024-02-15"
+output: html_document
+---
+
+## PREPARATION DES DONNEES:
+```{r}
+# Création des données 
+donnees <- data.frame(
+  Regime = rep(c("Regime1", "Regime2", "Regime3", "Regime4"), each = 3),
+  C = c(3.72, 3.40, 3.12, 4.21, 3.67, 3.82, 3.10, 3.37, 3.78, 4.13, 3.51, 3.39),
+  PB = c(16.82, 17.46, 17.20, 18.75, 18.46, 15.76, 17.13, 19.21, 16.79, 18.23, 15.30, 18.04),
+  MG = c(9.47, 10.46, 8.80, 6.36, 7.37, 11.30, 10.56, 10.63, 8.71, 10.69, 9.71, 9.95)
+)
+
+# Afficher les données
+print(donnees)
+```
+```{r}
+donnees[1]
+```
+
+
+## VISUALISATION DES DONNEES:
+### Boxplot teneur en C pour les regimes
+```{r}
+# Charger la bibliothèque ggplot2
+library(ggplot2)
+
+ggplot(donnees, aes(x = Regime, y = C)) +
+  geom_boxplot(fill = "skyblue", color = "blue") +
+  labs(title = "Teneur en C (%) par régime", x = "Régime", y = "Teneur en C (%)")
+```
+
+
+### Boxplot teneur en PB pour les regimes
+```{r}
+# Charger la bibliothèque ggplot2
+library(ggplot2)
+
+ggplot(donnees, aes(x = Regime, y = PB)) +
+  geom_boxplot(fill = "skyblue", color = "blue") +
+  labs(title = "Teneur en PB (%) par régime", x = "Régime", y = "Teneur en PB (%)")
+```
+
+
+### Boxplot teneur en MG pour les regimes
+```{r}
+# Charger la bibliothèque ggplot2
+library(ggplot2)
+
+ggplot(donnees, aes(x = Regime, y = MG)) +
+  geom_boxplot(fill = "skyblue", color = "blue") +
+  labs(title = "Teneur en MG (%) par régime", x = "Régime", y = "Teneur en MG (%)")
+```
+
+
+## TESTS STATISTIQUES:
+
+```{r}
+tapply(donnees$C,donnees$Regime, shapiro.test)
+```
+There is no significant departure from normality for Regime1(p=0.9265) or Regime2(p=0.5203) or Regime3(p=0.774) or Regime4(p=0.2896).
+
+
+```{r}
+library(car)
+leveneTest(donnees$C,donnees$Regime)
+```
+
+### Test d'ANOVA pour la teneur en C
+```{r}
+anova_C <- aov(C ~ Regime, data = donnees)
+summary(anova_C)
+```
+Les résultats de l'ANOVA pour la teneur en C montrent un F-value de 1.484 avec une p-value de 0.291. Cela indique que le modèle n'est pas statistiquement significatif, car la p-value est supérieure à un seuil alpha typique de 0.05. Par conséquent, **il n'y a pas de différences significatives dans la teneur en C (%) entre les différents régimes**.
+
+
+### Test d'ANOVA pour la teneur en PB
+```{r}
+anova_PB <- aov(PB ~ Regime, data = donnees)
+summary(anova_PB)
+```
+Les résultats de l'ANOVA pour la teneur en PB montrent un F-value de 0.144 avec une p-value de 0.931. Cela indique que le modèle n'est pas statistiquement significatif, car la p-value est bien supérieure au seuil alpha typique de 0.05. Par conséquent, il n'y a pas suffisamment de preuves pour rejeter l'hypothèse nulle, ce qui signifie qu'**il n'y a pas de différences significatives dans la teneur en PB entre les différents régimes.**
+
+
+### Test d'ANOVA pour la teneur en MG
+```{r}
+anova_MG <- aov(MG ~ Regime, data = donnees)
+summary(anova_MG)
+```
+F-value de 0.867 avec une p-value de 0.497 (supérieure au seuil alpha typique de 0.05). Par conséquent, **il n'y a pas de différences significatives dans la teneur en MG entre les différents régimes**.
+
+
+

@@ -1,0 +1,153 @@
+---
+title: "Analyse exploratoire des données et clustering"
+author: "Serigne Fallou MBacke NGOM"
+date: "2023-11-15"
+output: html_document
+---
+
+Nous allons analyser la structure de corrélation au sein d'un ensemble de données transcriptomiques. Les étapes prévues sont les suivantes :
+
+1. **Chargement et Exploration des Données :** Nous procéderons à l'importation des mesures transcriptomiques de deux tissus de souris, suivie d'une exploration succincte pour mieux appréhender la nature des données.
+
+2. **Analyse de Corrélation avec pairs() :** À l'aide de la fonction pairs(), nous examinerons la structure de corrélation entre les variables, permettant ainsi une visualisation efficace des relations entre les gènes.
+
+3. **Application de k-means et Clustering Hiérarchique :** Nous évaluerons l'impact de l'algorithme k-means et du clustering hiérarchique sur les données, cherchant à identifier des groupes intrinsèques au sein de l'échantillon.
+
+4. **Optimisation du Nombre de Clusters avec clValid :** Nous utiliserons l'outil clValid pour déterminer de manière objective le nombre optimal de clusters, contribuant ainsi à une segmentation pertinente des groupes au sein de l'ensemble de données.
+
+Cette approche méthodique vise à fournir des résultats rigoureux dans l'exploration de la corrélation au niveau transcriptomique, s'appuyant sur des méthodes de clustering bien établies pour dévoiler la structure sous-jacente des données.
+
+## Charger les données
+- Données intégré au package clValid.
+- 147 gènes et étiquettes de séquence exprimées dans deux lignées de souris en développement : les cellules de la crête neurale et les cellules dérivées du mésoderme. 
+- Trois échantillons par groupe.
+
+```{r, include=FALSE}
+suppressMessages(library(clValid))
+data(mouse)
+```
+```{r}
+str(mouse)    # Voir les types de variables dans le jeux de donnees
+head(mouse)
+```
+```{r}
+summary(mouse)
+```
+Le résumé fournit des informations utiles sur la distribution des variables. Notons que FC est une variable catégorielle.
+
+```{r}
+mouse_exp = mouse[,c("M1","M2","M3","NC1","NC2","NC3")]
+pairs(mouse_exp)
+```
+
+## Corrélations, distances et clustering
+Nous avons six échantillons, la matrice de corrélation devrait donc être 6x6.
+```{r}
+library(corrplot)
+mouse_cor <- cor(mouse_exp)
+dim(mouse_cor)
+```
+```{r}
+round(mouse_cor,2)
+```
+```{r}
+corrplot(mouse_cor, method="color")
+```
+
+## Classification hiérarchique
+Le regroupement hiérarchique nécessite des distances entre les échantillons. Utilisons dist()pour calculer ces distances et hclust()générer l'objet de clustering hiérarchique.
+
+Différentes valeurs pour methodpeuvent produire des résultats différents. En effet complete et ward.D2 produisent des résultats stables.
+```{r}
+d <- dist(log(mouse_exp))
+h <- hclust(d,method="ward.D2")
+plot(h)
+```
+
+Ajoutons maintenant une carte thermique à ce dendrogramme, afin que nous puissions voir les valeurs des gènes dans chaque cluster. Pour cela, nous utiliserons la heatmap()fonction, qui nécessite l'attribution d'étiquettes de cluster à chaque échantillon, ainsi qu'une fonction génératrice de dendrogrammes.
+
+Nous obtenons des affectations de clusters en « coupant » le dendrogramme en deux clusters (ce que nous attendons de notre conception expérimentale). Nous utilisons cutree()pour cela.
+```{r}
+library("RColorBrewer")
+
+h2 <- cutree(h, k = 2)
+h2cols <- c("orangered","blue")[h2]
+
+hclust_fun <- function(x){
+    f <- hclust(x, method = "ward.D2");
+    return(f)
+}
+
+heatmap(
+    as.matrix(mouse_exp),
+    col = brewer.pal("Blues",n=8),
+    hclustfun = hclust_fun,
+    RowSideColors = h2cols, 
+    ColSideColors = c(
+        rep("darkgreen",3),
+        rep("deeppink2",3)
+    )
+)
+```
+Notez que les deux couleurs sont complètement divisées (c'est-à-dire qu'il n'y a pas de rouge et de bleu entrecoupés). C'est un bon signe !
+
+Comparez ce résultat à ce qui se passe si nous essayons le même appel de fonction sans clustering :
+```{r}
+heatmap(
+    as.matrix(mouse_exp),
+    col = brewer.pal("Blues",n=8),
+    RowSideColors = h2cols, # use colours from cutree call above
+    ColSideColors = c(
+        rep("darkgreen",3),
+        rep("deeppink2",3)
+    )
+)
+```
+
+## K-means clustering
+Essayons d'utiliser le clustering k-means, en demandant trois clusters :
+```{r}
+kclust <- kmeans(
+    mouse_exp, 
+    centers = 3
+)
+kclust
+```
+## Utilisation clValidpour déterminer le nombre de clusters
+Utilisez la clValid()fonction pour valider les clusters à l'aide de :
+- Indice Dunn;
+- scores de silhouette;
+- connectivité.
+
+```{r}
+validation_data <- clValid(
+    mouse_exp,
+    2:6, # num. clusters to evaluate
+    clMethods = c("hier","kmeans"), # methods to eval.
+    validation = "internal"
+)
+
+summary(validation_data)
+```
+
+Toutes les mesures de clustering indiquent systématiquement que deux clusters correspondent le mieux aux données.
+
+```{r}
+d <- dist(log(mouse_exp))
+h <- hclust(d,method="ward.D2")
+cluster_ids <- cutree(h, k = 2)
+clust_colors <- c("dodgerblue","orangered")[cluster_ids]
+
+heatmap(
+    as.matrix(mouse_exp),
+    col = brewer.pal("Blues",n=8),
+    hclustfun = hclust_fun,
+    RowSideColors = clust_colors, # kmeans labels
+    ColSideColors = c(
+        rep("darkgreen",3),
+        rep("deeppink2",3)
+    )
+)
+```
+
+

@@ -1,0 +1,298 @@
+---
+title: "Machine Learning: Decision Trees"
+author: "Serigne Fallou MBacke NGOM"
+date: "2023-10-13"
+output: html_document
+---
+```{r, echo=FALSE}
+##library(reticulate)
+##version = '3.10.11'
+##install_python(version = version)
+##virtualenv_create("my-python", python_version = version)
+```
+
+
+```{r, include=FALSE}
+library(reticulate)
+use_virtualenv("my-python")
+#virtualenv_install(envname = "my-python", "numpy", ignore_installed = FALSE, pip_options = character())
+```
+
+
+### Reading Data
+```{python}
+import numpy as np
+import pandas as pd
+
+data = pd.read_csv('data1.csv')
+data.loc[np.r_[0:3, 51:53, 101:103], :]
+```
+
+
+### Data Check (Missing Values, Label Check)
+- Check the dataset to make sure no data is missing and Check the class labels;
+- Use data_found as a dummy variable to determine whether to print missing value information
+```{python}
+def verify_dataset(data):
+    data_found = 1
+    for each_column in data.columns:
+        if data[each_column].isnull().any():
+            print("Data missing in Column " + each_column)
+            data_found = 0
+            quit()
+
+        if data_found == 1:
+            print("Dataset is complete. No missing value")
+
+        return
+
+verify_dataset(data)
+```
+
+### Create a Training & Testing Set
+The data set of 150 inds is divided into 70% for training and 30% for testing (3-fold cross validation):
+- Splitting The Datase in training and testing;
+- Use the .sample() function to scramble the data set;
+- Determine the integer location (iloc) from beginning of array (:) to 0.7*150 and do a ”cleanup” with a reset call;
+- Call split_dataset_test_train and check data sets.
+```{python}
+def split_dataset_test_train(data):
+    data = data.sample(frac=1).reset_index(drop=True)
+    training_data = data.iloc[:int(0.7 * len(data))].reset_index(drop=True)
+    testing_data = data.iloc[int(0.7 * len(data)):].reset_index(drop=True)
+    return [training_data, testing_data]
+
+testtrain = split_dataset_test_train(data)
+print(testtrain)
+```
+
+### Calculate gini index for a given split:
+The Gini index measures the degree or probability of a particular variable being wrongly classified when it is randomly chosen.
+Gini index is between 0 and 1.
+```{python}
+def gini_index(data, target_col):
+    elements, counts = np.unique(data[target_col], return_counts = True)
+    total_counts = sum(counts)
+    sum_prob = 0.0
+    for i in range (elements.size):
+        prob_i = counts[i] / total_counts
+        sum_prob = sum_prob + prob_i * prob_i
+
+    gini_index= 1 - sum_prob
+    return gini_index
+```
+
+### Information gain
+This function measures the reduction of the Gini index (a measure of data impurity) by dividing the dataset into two parts based on a specific feature and a threshold value. Information gain is used in decision tree algorithms to select the best feature and threshold value to split the data.
+```{python}
+def information_gain(data, target_col, threshold, target_class = "variety"):
+    total_gini_index = gini_index(data, "variety")
+    data_left = data[data[target_col] < threshold]
+    data_right = data[data[target_col] >= threshold]
+    gini_index_after_split = data_left.shape[0]/ data.shape[0] * gini_index(data_left, "variety") + data_right.shape[0]/data.shape[0] * gini_index(data_right, "variety")
+    info_gain = total_gini_index - gini_index_after_split
+    return info_gain
+```
+
+### Establish optimal splits based on the best features, best cutoffs, and best information gains
+```{python}
+def selectBestFeatureAndCutoff(data, target_class = "variety"):
+    featureList = list(data)[0:4]
+    best_feature = "None"
+    best_cutoff = 0.0
+    best_info_gain = 0.0
+    for feature in featureList:
+        max_value = data[feature].max()
+        min_value = data[feature].min()
+        for cutoff in np.arange(min_value, max_value, 0.1):
+            if best_info_gain < information_gain(data, feature, cutoff):
+                best_info_gain = information_gain(data, feature, cutoff)
+                best_cutoff = cutoff
+                best_feature = feature
+
+    return [best_feature, best_cutoff, best_info_gain]
+```
+
+### Define the decision tree root (ie the first node), create the associated recursive splitting function, and create the associated prediction function
+```{python}
+class Node:
+    def __init__(self, feature, cut_off, label = None, is_leaf = False):
+        self.feature = feature
+        self.cut_off = cut_off
+        self.left_child = None
+        self.right_child = None
+        self.is_leaf = is_leaf
+        self.label = label
+        #print("node's label: ")
+        #print(self.label)
+        
+class DTree:
+    # method to train a decision tree
+    def train(self, data):
+        self.root = self.build_tree(data)
+
+    # method to build decision tree
+    def build_tree(self, data):
+        best_feature, best_cutoff, best_info_gain = selectBestFeatureAndCutoff(data)
+        # if all data has the same label , we are at a leaf node
+        if len(np.unique(data["variety"])) == 1:
+            #print(data["variety"].iloc[0])
+            return Node(best_feature, best_cutoff, data["variety"].iloc[0], True)
+
+        # if we are not the leaf
+        # first lets split data
+        data_left = data[data[best_feature] < best_cutoff]
+        data_right = data[data[best_feature] >= best_cutoff]
+
+        #build current node
+        current_node = Node(best_feature, best_cutoff)
+        #add left node
+        current_node.left_child = self.build_tree(data_left)
+        #add right node
+        current_node.right_child = self.build_tree(data_right)
+
+        return current_node
+ # Make a prediction with a decision tree
+    def predict(self, data):
+        current_node = self.root
+        while(True):
+
+            # if we are at the leaf node , return label
+            if current_node.is_leaf == True:
+                return current_node.label
+            # otherwise we need figure out where to go next
+            feature = current_node.feature
+            cutoff = current_node.cut_off
+            if data[feature]  < cutoff:
+                current_node = current_node.left_child
+            else:
+                current_node = current_node.right_child
+
+```
+
+### Train the decision tree
+```{python}
+d_tree = DTree()
+training_data = testtrain[0]
+d_tree.train(training_data)
+```
+
+### Define the confusion matrix
+```{python}
+def print_ConfusionMatrix(result):
+    count_SS = result[0]
+    count_SVi = result[1]
+    count_SVe = result[2]
+    count_ViVi = result[3]
+    count_ViVe = result[4]
+    count_ViS = result[5]
+    count_VeVe = result[6]
+    count_VeVi = result[7]
+    count_VeS = result[8]
+    data = {"predict\Observe": ["Setosa (predict)", "Virginica (predict)", "Versicolor (predict)"],
+            "Setosa (observed)": [count_SS / (count_SS + count_ViS + count_VeS), count_SVi / (count_SVi + count_ViVi + count_VeVi), count_SVe / (count_SVe + count_ViVe + count_VeVe)],
+            "Virginica (observed)": [count_ViS / (count_SS + count_ViS + count_VeS), count_ViVi / (count_SVi + count_ViVi + count_VeVi), count_ViVe / (count_SVe + count_ViVe + count_VeVe)],
+            "Versicolor (observed)": [count_VeS / (count_SS + count_ViS + count_VeS), count_VeVi / (count_SVi + count_ViVi + count_VeVi), count_VeVe / (count_SVe + count_ViVe + count_VeVe)]
+            }
+
+    output = pd.DataFrame(data, columns = ["predict\Observe", "Setosa (observed)", "Virginica (observed)", "Versicolor (observed)"])
+    return output
+```
+
+### Create the confusion matrix
+```{python}
+def predict_batch(data):
+    d_tree = DTree()
+    d_tree.train(training_data)
+    count_SS = 0
+    count_SVi = 0
+    count_SVe = 0
+    count_ViVi = 0
+    count_ViS = 0
+    count_ViVe = 0
+    count_VeVe = 0
+    count_VeS = 0
+    count_VeVi = 0
+    count_total_T = 0
+    count_total_F  = 0
+
+    for i in range (data.shape[0]):
+        instance = data.iloc[i]
+        true_label = instance["variety"]
+        predict_label = d_tree.predict(data.iloc[i])
+        if true_label == predict_label:
+            count_total_T = count_total_T + 1
+            if true_label == "Setosa":
+                count_SS = count_SS + 1
+            elif true_label == "Versicolor":
+                count_ViVi = count_ViVi + 1
+            elif true_label == "Virginica":
+                count_VeVe = count_VeVe + 1
+        else:
+            count_total_F = count_total_F + 1
+            if true_label == "Setosa" and predict_label == "Virginica":
+                count_SVi = count_SVi + 1
+            elif true_label == "Setosa" and predict_label == "Versicolor":
+                count_SVe = count_SVe + 1
+            elif true_label == "Versicolor" and predict_label == "Virginica":
+                count_VeVi = count_VeVi + 1
+            elif true_label == "Versicolor" and predict_label == "Setosa":
+                count_VeS = count_VeS + 1
+            elif true_label == "Virginica" and predict_label == "Versicolor":
+                count_ViVe = count_ViVe + 1
+            elif true_label == "Virginica" and predict_label == "Setosa":
+                count_ViS = count_ViS + 1
+
+    return [count_SS, count_SVi, count_SVe, count_ViVi, count_ViVe, count_ViS, count_VeVe, count_VeVi, count_VeS, count_total_T, count_total_F]
+
+```
+
+### Look at the confusion matrix for training data
+```{python}
+# Set pandas display options to show all rows and columns
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+training_data = testtrain[0]
+print_ConfusionMatrix(predict_batch(training_data))
+
+# Reset pandas display options to default (optional)
+pd.reset_option('display.max_rows')
+pd.reset_option('display.max_columns')
+```
+
+### Look at the confusion matrix for testing data
+```{python}
+testing_data = testtrain[1]
+
+# Set pandas display options to show all rows and columns
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+print(print_ConfusionMatrix(predict_batch(testing_data)))
+
+# Reset pandas display options to default (optional)
+pd.reset_option('display.max_rows')
+pd.reset_option('display.max_columns')
+
+```
+
+
+### Make predictions
+```{python}
+# method that run prediction
+def predict(d_tree, sepal_length, sepal_width, petal_length, petal_width):
+    test_data = pd.Series([sepal_length, sepal_width, petal_length, petal_width], index = ['sepal.length', 'sepal.width', 'petal.length', 'petal.width'])
+    return d_tree.predict(test_data)
+```
+
+- Predict a new ind with [sepal_length=1 , sepal_width=2 , petal_length=3 , petal_width=4]
+```{python}
+predict_features = [1, 2, 3, 4]
+
+result_category = predict(d_tree, predict_features[0], predict_features[1], predict_features[2], predict_features[3])
+
+print("This flower is a", result_category)
+```
+
+
